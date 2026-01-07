@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar & Lunar Eclipse Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(ellipse at center, #0d1529 0%, #050d1a 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        #canvas {
+            display: block;
+            background: linear-gradient(45deg, #0a0f1c 25%, #1a1f2e 25%, #1a1f2e 50%, #0a0f1c 50%, #0a0f1c 75%, #1a1f2e 75%);
+            background-size: 40px 40px;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #333;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+        
+        .controls-title {
+            text-align: center;
+            margin: 0 0 15px 0;
+            color: #ffd700;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 12px 18px;
+            background: linear-gradient(145deg, #2a3040, #1a2030);
+            border: 2px solid #444;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            border-color: #666;
+        }
+        
+        .control-btn.active {
+            background: linear-gradient(145deg, #ff6b35, #f7931e);
+            border-color: #ff8c42;
+            box-shadow: 0 0 25px rgba(255, 107, 53, 0.6);
+            color: white;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 25px 35px;
+            border-radius: 15px;
+            border: 2px solid #333;
+            text-align: center;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+        
+        .info-title {
+            margin: 0 0 12px 0;
+            color: #ffd700;
+            font-size: 26px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .info-description {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+        
+        .legend-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+            min-width: 200px;
+        }
+        
+        .legend-title {
+            margin: 0 0 15px 0;
+            color: #ffd700;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            gap: 12px;
+        }
+        
+        .legend-sphere {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+        
+        .sun-sphere {
+            background: radial-gradient(circle at 30% 30%, #ffff44, #ffa500);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            animation: sunGlow 2s ease-in-out infinite alternate;
+        }
+        
+        .earth-sphere {
+            background: radial-gradient(circle at 30% 30%, #4169e1, #1e90ff);
+            box-shadow: 0 0 10px rgba(65, 105, 225, 0.5);
+        }
+        
+        .moon-sphere {
+            background: radial-gradient(circle at 30% 30%, #f8f8f8, #c0c0c0);
+            box-shadow: 0 0 8px rgba(192, 192, 192, 0.4);
+        }
+        
+        @keyframes sunGlow {
+            0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+            100% { box-shadow: 0 0 30px rgba(255, 215, 0, 1); }
+        }
+        
+        .keyboard-hints {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            border: 1px solid #444;
+            line-height: 1.5;
+        }
+        
+        .performance-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid #444;
+        }
+        
+        /* تأثيرات الظلال والتوهج */
+        .shadow-effect {
+            filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+        }
+        
+        .glow-effect {
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="controls-panel">
+        <div class="controls-title">🌌 وحدة التحكم في المحاكاة</div>
+        <div class="controls-grid">
+            <button class="control-btn active" onclick="setMode('normal')">
+                🌍 المدار العادي<br><small>(N)</small>
+            </button>
+            <button class="control-btn" onclick="setMode('eclipse')">
+                🌑 كسوف الشمس<br><small>(E)</small>
+            </button>
+            <button class="control-btn" onclick="setMode('lunar')">
+                🌕 خسوف القمر<br><small>(L)</small>
+            </button>
+        </div>
+    </div>
+    
+    <div class="keyboard-hints">
+        <strong>⌨️ اختصارات الكيبورد:</strong><br>
+        <kbd>N</kbd> - المدار العادي<br>
+        <kbd>E</kbd> - كسوف الشمس<br>
+        <kbd>L</kbd> - خسوف القمر<br>
+        <kbd>ESC</kbd> - إيقاف المحاكاة
+    </div>
+    
+    <div class="performance-info" id="performance">
+        FPS: 60 | الأرض: 0° | القمر: 0°
+    </div>
+    
+    <div class="legend-panel">
+        <div class="legend-title">🪐 الأجرام السماوية</div>
+        <div class="legend-item">
+            <div class="legend-sphere sun-sphere"></div>
+            <span>الشمس (مصدر الضوء)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-sphere earth-sphere"></div>
+            <span>الأرض</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-sphere moon-sphere"></div>
+            <span>القمر</span>
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <div class="info-title" id="mode-title">🌍 المدار العادي</div>
+        <div class="info-description" id="mode-description">
+            الأرض تدور حول الشمس في مدار دائري والقمر يدور حول الأرض في مداره الطبيعي.
+            هذا هو الوضع الطبيعي للأجرام السماوية في نظامنا الشمسي.
+        </div>
+    </div>
+
+    <script>
+        // إعداد الكانفاس والسياق
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // ضبط حجم الكانفاس
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // متغيرات المحاكاة (مطابقة للكود الأصلي)
+        let earthOrbitAngle = 0.0;
+        let moonOrbitAngle = 0.0;
+        let eclipseMode = false;
+        let lunarEclipseMode = false;
+        
+        // متغيرات الأداء
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 60;
+        
+        // معلومات الأوضاع
+        const modeInfo = {
+            normal: {
+                title: '🌍 المدار العادي',
+                description: 'الأرض تدور حول الشمس في مدار دائري والقمر يدور حول الأرض في مداره الطبيعي. هذا هو الوضع الطبيعي للأجرام السماوية في نظامنا الشمسي.'
+            },
+            eclipse: {
+                title: '🌑 كسوف الشمس',
+                description: 'القمر يمر بين الأرض والشمس محجباً ضوء الشمس عن الأرض. هذه ظاهرة الكسوف الشمسي النادرة التي تحدث عندما تصطف الأجرام السماوية في خط مستقيم.'
+            },
+            lunar: {
+                title: '🌕 خسوف القمر',
+                description: 'الأرض تمر بين الشمس والقمر فتحجب ضوء الشمس عن القمر. هذه ظاهرة الخسوف القمري التي تحدث عندما يدخل القمر في ظل الأرض.'
+            }
+        };
+        
+        // دالة تغيير الوضع
+        function setMode(mode) {
+            // إعادة ضبط الأوضاع
+            eclipseMode = false;
+            lunarEclipseMode = false;
+            
+            // ضبط الوضع الجديد
+            if (mode === 'eclipse') {
+                eclipseMode = true;
+            } else if (mode === 'lunar') {
+                lunarEclipseMode = true;
+            }
+            
+            // تحديث واجهة المستخدم
+            document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('mode-title').textContent = modeInfo[mode].title;
+            document.getElementById('mode-description').textContent = modeInfo[mode].description;
+        }
+        
+        // دالة رسم كرة ثلاثية الأبعاد مع إضاءة
+        function drawSphere(position, radius, color, isLightSource = false) {
+            // محاكاة العرض الثلاثي الأبعاد (مطابق للكود الأصلي)
+            const perspective = 800;
+            const z = position.z + 400; // إزاحة العمق
+            const scale = perspective / z;
+            
+            const screenX = position.x * scale + canvas.width / 2;
+            const screenY = position.y * scale + canvas.height / 2;
+            const screenRadius = radius * scale;
+            
+            // رسم التوهج للشمس
+            if (isLightSource) {
+                const glowGradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, screenRadius * 4);
+                glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+                glowGradient.addColorStop(0.2, 'rgba(255, 165, 0, 0.6)');
+                glowGradient.addColorStop(0.5, 'rgba(255, 69, 0, 0.3)');
+                glowGradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = glowGradient;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, screenRadius * 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            // رسم الكرة الرئيسية مع تدرج لوني
+            const gradient = ctx.createRadialGradient(
+                screenX - screenRadius * 0.3, 
+                screenY - screenRadius * 0.3, 
+                0,
+                screenX, 
+                screenY, 
+                screenRadius
+            );
+            
+            // تطبيق الألوان حسب نوع الجرم
+            switch(color) {
+                case 'sun':
+                    gradient.addColorStop(0, '#FFFF66');
+                    gradient.addColorStop(0.7, '#FFD700');
+                    gradient.addColorStop(1, '#FF8C00');
+                    break;
+                case 'earth':
+                    gradient.addColorStop(0, '#87CEEB');
+                    gradient.addColorStop(0.4, '#4169E1');
+                    gradient.addColorStop(1, '#1E3A8A');
+                    break;
+                case 'moon':
+                    gradient.addColorStop(0, '#FFFFFF');
+                    gradient.addColorStop(0.6, '#F5F5F5');
+                    gradient.addColorStop(1, '#A0A0A0');
+                    break;
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, screenRadius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // رسم الحدود
+            ctx.strokeStyle = isLightSource ? 'rgba(255, 255, 0, 0.8)' : 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            return { x: screenX, y: screenY, radius: screenRadius };
+        }
+        
+        // دالة رسم المدارات
+        function drawOrbit(center, radius) {
+            const perspective = 800;
+            const z = center.z + 400;
+            const scale = perspective / z;
+            
+            const screenX = center.x * scale + canvas.width / 2;
+            const screenY = center.y * scale + canvas.height / 2;
+            const screenRadius = radius * scale;
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, screenRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // دالة رسم الظلال
+        function drawShadow(lightPos, objectPos, shadowLength = 400) {
+            const dx = objectPos.x - lightPos.x;
+            const dy = objectPos.y - lightPos.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                const shadowEndX = objectPos.x + (dx / distance) * shadowLength;
+                const shadowEndY = objectPos.y + (dy / distance) * shadowLength;
+                
+                const shadowGradient = ctx.createLinearGradient(
+                    objectPos.x, objectPos.y, 
+                    shadowEndX, shadowEndY
+                );
+                shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+                shadowGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.3)');
+                shadowGradient.addColorStop(1, 'transparent');
+                
+                ctx.strokeStyle = shadowGradient;
+                ctx.lineWidth = objectPos.radius * 2.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(objectPos.x, objectPos.y);
+                ctx.lineTo(shadowEndX, shadowEndY);
+                ctx.stroke();
+            }
+        }
+        
+        // دالة رسم خطوط الاتصال
+        function drawAlignmentLines(sun, earth, moon) {
+            ctx.strokeStyle = 'rgba(255, 255, 100, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 8]);
+            
+            ctx.beginPath();
+            ctx.moveTo(sun.x, sun.y);
+            ctx.lineTo(earth.x, earth.y);
+            ctx.lineTo(moon.x, moon.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // دالة تحديث معلومات الأداء
+        function updatePerformance(currentTime) {
+            frameCount++;
+            if (currentTime - lastTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                frameCount = 0;
+                lastTime = currentTime;
+                
+                document.getElementById('performance').textContent = 
+                    `FPS: ${fps} | الأرض: ${Math.round(earthOrbitAngle)}° | القمر: ${Math.round(moonOrbitAngle)}°`;
+            }
+        }
+        
+        // الحلقة الرئيسية للرسم (مطابقة للكود الأصلي)
+        function animate(currentTime) {
+            updatePerformance(currentTime);
+            
+            // مسح الشاشة
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // مواضع الأجرام السماوية (مطابقة للكود الأصلي)
+            const sunPosition = { x: -200, y: 0, z: 0 };
+            
+            const earthPosition = {
+                x: Math.cos(earthOrbitAngle * Math.PI / 180) * 280,
+                y: 0,
+                z: Math.sin(earthOrbitAngle * Math.PI / 180) * 280
+            };
+            
+            let moonPosition;
+            
+            if (eclipseMode) {
+                // القمر بين الأرض والشمس (كسوف)
+                moonPosition = {
+                    x: (earthPosition.x + sunPosition.x) / 2,
+                    y: 0,
+                    z: (earthPosition.z + sunPosition.z) / 2
+                };
+            } else if (lunarEclipseMode) {
+                // الأرض بين الشمس والقمر (خسوف)
+                moonPosition = {
+                    x: earthPosition.x + (earthPosition.x - sunPosition.x),
+                    y: 0,
+                    z: earthPosition.z + (earthPosition.z - sunPosition.z)
+                };
+            } else {
+                // المدار العادي للقمر حول الأرض
+                moonPosition = {
+                    x: earthPosition.x + Math.cos(moonOrbitAngle * Math.PI / 180) * 100,
+                    y: 0,
+                    z: earthPosition.z + Math.sin(moonOrbitAngle * Math.PI / 180) * 100
+                };
+            }
+            
+            // رسم المدارات
+            drawOrbit({ x: 0, y: 0, z: 0 }, 280);
+            drawOrbit(earthPosition, 100);
+            
+            // رسم الأجرام السماوية
+            const sunRendered = drawSphere(sunPosition, 60, 'sun', true);
+            const earthRendered = drawSphere(earthPosition, 40, 'earth');
+            const moonRendered = drawSphere(moonPosition, 12, 'moon');
+            
+            // رسم الظلال والخطوط في أوضاع الكسوف
+            if (eclipseMode) {
+                drawShadow(sunRendered, earthRendered, 300);
+                drawAlignmentLines(sunRendered, moonRendered, earthRendered);
+            } else if (lunarEclipseMode) {
+                drawShadow(sunRendered, moonRendered, 250);
+                drawAlignmentLines(sunRendered, earthRendered, moonRendered);
+            }
+            
+            // تحديث الزوايا (مطابق للكود الأصلي)
+            earthOrbitAngle += 0.1;
+            moonOrbitAngle += 0.3;
+            
+            // إعادة ضبط الزوايا لتجنب التراكم
+            if (earthOrbitAngle >= 360) earthOrbitAngle = 0;
+            if (moonOrbitAngle >= 360) moonOrbitAngle = 0;
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // التحكم بالكيبورد (مطابق للكود الأصلي)
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            
+            if (key === 'escape') {
+                if (confirm('هل تريد إيقاف المحاكاة؟')) {
+                    document.body.innerHTML = `
+                        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#000;">
+                            <h1 style="color:#ffd700;font-size:36px;margin-bottom:20px;">🌌 تم إيقاف المحاكاة</h1>
+                            <p style="color:white;font-size:18px;">شكراً لاستخدام محاكاة الكسوف والخسوف</p>
+                        </div>
+                    `;
+                }
+                return;
+            }
+            
+            // تحديث الأوضاع
+            if (key === 'n') {
+                eclipseMode = false;
+                lunarEclipseMode = false;
+                updateUI('normal');
+            } else if (key === 'e') {
+                eclipseMode = true;
+                lunarEclipseMode = false;
+                updateUI('eclipse');
+            } else if (key === 'l') {
+                lunarEclipseMode = true;
+                eclipseMode = false;
+                updateUI('lunar');
+            }
+        });
+        
+        // دالة تحديث واجهة المستخدم
+        function updateUI(mode) {
+            document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+            
+            const buttons = document.querySelectorAll('.control-btn');
+            switch(mode) {
+                case 'normal': buttons[0].classList.add('active'); break;
+                case 'eclipse': buttons[1].classList.add('active'); break;
+                case 'lunar': buttons[2].classList.add('active'); break;
+            }
+            
+            document.getElementById('mode-title').textContent = modeInfo[mode].title;
+            document.getElementById('mode-description').textContent = modeInfo[mode].description;
+        }
+        
+        // بدء المحاكاة
+        animate(performance.now());
+        
+        // رسالة ترحيب
+        console.log('🌌 مرحباً بك في محاكاة الكسوف والخسوف');
+        console.log('⌨️ استخدم المفاتيح N, E, L للتنقل بين الأوضاع');
+        console.log('🎮 أو استخدم الأزرار في أعلى الشاشة');
+    </script>
+</body>
+</html>
