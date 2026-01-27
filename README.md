@@ -3,7 +3,7 @@
 A high-performance, interactive 2D Canvas simulation that visualizes the celestial mechanics of Earth, the Moon, and the Sun. This project demonstrates the alignment of celestial bodies during solar and lunar eclipses using pseudo-3D perspective rendering.
 
 ![Eclipse Simulation Banner](licensed-image.jfif)  
-*Replace with actual screenshot or Shutterstock attribution if needed*
+
 
 ---
 
